@@ -1,0 +1,207 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "title": "Egypt · home base · 13",
+    "description": "Fall In Scent, Khaled Mo, Hosavity, Yoka Canvas, Jockey MM Kids, Baly Leather, BnRamadan Portfolio, Thermo Egypt, Vllol, Heba Abd El-Razek, BnRamadan Store, MS NFSA, SG SOC Analyst",
+    "marker-color": "#00B4EF",
+    "marker-size": "large",
+    "marker-symbol": "star"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     31.24,
+     30.04
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "title": "Saudi Arabia · Tawazun",
+    "description": "1 project: Tawazun",
+    "marker-color": "#AECAEA",
+    "marker-size": "medium"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     46.72,
+     24.69
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "stroke": "#AECAEA",
+    "stroke-width": 2,
+    "stroke-opacity": 0.8
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      31.24,
+      30.04
+     ],
+     [
+      46.72,
+      24.69
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "title": "Germany · FAW4U",
+    "description": "1 project: FAW4U",
+    "marker-color": "#AECAEA",
+    "marker-size": "medium"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.4,
+     52.52
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "stroke": "#AECAEA",
+    "stroke-width": 2,
+    "stroke-opacity": 0.8
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      31.24,
+      30.04
+     ],
+     [
+      13.4,
+      52.52
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "title": "Japan · Yoi Cosmetics",
+    "description": "1 project: Yoi Cosmetics",
+    "marker-color": "#AECAEA",
+    "marker-size": "medium"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     139.69,
+     35.69
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "stroke": "#AECAEA",
+    "stroke-width": 2,
+    "stroke-opacity": 0.8
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      31.24,
+      30.04
+     ],
+     [
+      139.69,
+      35.69
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "title": "New Zealand · Wild Valley Honey",
+    "description": "1 project: Wild Valley Honey",
+    "marker-color": "#AECAEA",
+    "marker-size": "medium"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     174.76,
+     -36.85
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "stroke": "#AECAEA",
+    "stroke-width": 2,
+    "stroke-opacity": 0.8
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      31.24,
+      30.04
+     ],
+     [
+      174.76,
+      -36.85
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "title": "USA · One Piece",
+    "description": "1 project: Pr - One Piece",
+    "marker-color": "#AECAEA",
+    "marker-size": "medium"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -95.0,
+     38.0
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "stroke": "#AECAEA",
+    "stroke-width": 2,
+    "stroke-opacity": 0.8
+   },
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      31.24,
+      30.04
+     ],
+     [
+      -95.0,
+      38.0
+     ]
+    ]
+   }
+  }
+ ]
+}
