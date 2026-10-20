@@ -62,7 +62,8 @@ def stats(days):
         run = run + 1 if c > 0 else 0
         longest = max(longest, run)
     active = sum(1 for _, _, c in days if c > 0)
-    return {"total": total, "longest": longest, "active": active, "best_date": best[0], "best": best[2]}
+    week = sum(c for _, _, c in days[-7:])
+    return {"total": total, "longest": longest, "active": active, "best_date": best[0], "best": best[2], "week": week}
 
 
 def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
@@ -70,11 +71,11 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
     cannot fetch a font, and the Actions runner has no font tools, so they are made once and committed."""
     tok = dict(DEFAULT_TOKENS, **(tok or {}))
     st = stats(days)
-    W, H = 1200, 560
+    W, H = 1200, 470
     # a shallow dimetric grid so a year spans the card: weeks run right (wx, wy), weekdays run
     # toward the viewer (dx, dy). A tile is the parallelogram p, p+w, p+w+d, p+d.
     wx, wy, dx, dy = 15.0, 3.2, -9.0, 7.0
-    ox, oy = 200, 270
+    ox, oy = 200, 222
     first = dt.date.fromisoformat(days[0][0]) if days else dt.date.today()
     peak = max([c for _, _, c in days] + [1])
     placed = []
@@ -114,6 +115,8 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
            ".h{font:400 46px Display,'Rubik Doodle Shadow',Impact,sans-serif;fill:%(fg)s}"
            ".n{font:400 36px Display,'Rubik Doodle Shadow',Impact,sans-serif;fill:%(pr)s}"
            ".l{font:500 12px Body,Roboto,'Segoe UI',Arial,sans-serif;letter-spacing:.24em;fill:%(mu)s}"
+           ".ld{fill:%(se)s}.lr{fill:none;stroke:%(se)s;stroke-width:1.5;transform-box:fill-box;transform-origin:center;"
+           "animation:ping 1.8s ease-out infinite}@keyframes ping{from{transform:scale(1);opacity:.9}to{transform:scale(3.4);opacity:0}}"
            ".b{transform-box:fill-box;transform-origin:bottom;animation:rise .9s cubic-bezier(.2,.9,.3,1.2) backwards}"
            ".run,.tail{fill:none;stroke:%(se)s;stroke-linecap:round;stroke-linejoin:round}"
            ".run{stroke-width:4;stroke-dasharray:9 991;animation:run 16s linear infinite;filter:drop-shadow(0 0 6px %(se)s)}"
@@ -122,16 +125,48 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
            "@keyframes tail{from{stroke-dashoffset:1025}to{stroke-dashoffset:25}}"
            "@media (prefers-reduced-motion: reduce){*{animation:none!important}}"
            ) % {"bg": tok["bg"], "se": tok["secondary"], "fg": tok["fg"], "pr": tok["primary"], "mu": tok["muted"]}
+    # live numbers, recomputed by every run: the year, the last seven days, the longest streak
     stat_el = "".join('<text x="%d" y="128" class="n" text-anchor="end">%s</text><text x="%d" y="150" class="l" text-anchor="end">%s</text>'
-                      % (x, v, x, l) for x, v, l in ((1124, s_total, "CONTRIBUTIONS"), (1124 - 190, "%d DAYS" % s_long, "LONGEST STREAK"),
-                                                     (1124 - 380, str(s_best), "BUSIEST DAY")))
+                      % (x, v, x, l) for x, v, l in ((1124, s_total, "THIS YEAR"), (1124 - 190, "{:,}".format(st["week"]), "THIS WEEK"),
+                                                     (1124 - 380, "%d DAYS" % s_long, "LONGEST STREAK")))
+    stat_el += ('<circle cx="81" cy="73" r="4.5" class="ld"/><circle cx="81" cy="73" r="4.5" class="lr"/>')
+    # the same glass language as the rest of the profile: a soft glow of the palette behind the city
+    # and a lit edge around the card
+    glow = ('<defs><radialGradient id="g1"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s" stop-opacity="0"/></radialGradient>'
+            '<radialGradient id="g2"><stop offset="0" stop-color="%s"/><stop offset="1" stop-color="%s" stop-opacity="0"/></radialGradient>'
+            '<linearGradient id="ge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%s" stop-opacity=".7"/>'
+            '<stop offset=".5" stop-color="%s" stop-opacity=".08"/><stop offset="1" stop-color="%s" stop-opacity=".35"/></linearGradient></defs>'
+            '<circle cx="420" cy="300" r="320" fill="url(#g1)" opacity=".16"/><circle cx="980" cy="380" r="200" fill="url(#g2)" opacity=".12"/>'
+            % (tok["primary"], tok["primary"], tok["secondary"], tok["secondary"], tok["primary"], tok["primary"], tok["primary"]))
+    edge = ('<rect x=".7" y=".7" width="%.1f" height="%.1f" rx="23.3" fill="none" stroke="url(#ge)" stroke-width="1.4"/>'
+            '<path d="M24 1.2H%d" stroke="#fff" stroke-opacity=".2" stroke-linecap="round"/>' % (W - 1.4, H - 1.4, W - 24))
     alt = "Build city: %s contributions in the last year as an isometric city, longest streak %d days, busiest day %d." % (s_total, s_long, s_best)
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" role="img" aria-label="%s">'
-            '<title>%s</title><style>%s</style><rect class="bg" width="%d" height="%d" rx="24"/>'
-            '<text x="76" y="78" class="t">%s</text><text x="76" y="124" class="h">%s</text>%s'
-            '<g>%s<path class="tail" d="%s" pathLength="1000"/><path class="run" d="%s" pathLength="1000"/></g></svg>'
-            % (W, H, W, H, html.escape(alt), html.escape(alt), css, W, H, html.escape(subtitle.upper()), html.escape(title),
-               stat_el, "".join(cells), d_run, d_run))
+            '<title>%s</title><style>%s</style><rect class="bg" width="%d" height="%d" rx="24"/>%s'
+            '<text x="96" y="78" class="t">%s</text><text x="76" y="124" class="h">%s</text>%s'
+            '<g>%s<path class="tail" d="%s" pathLength="1000"/><path class="run" d="%s" pathLength="1000"/></g>%s</svg>'
+            % (W, H, W, H, html.escape(alt), html.escape(alt), css, W, H, glow, html.escape(subtitle.upper()), html.escape(title),
+               stat_el, "".join(cells), d_run, d_run, edge))
+
+
+def sky_phase(hour):
+    """The hero variant for a local hour: morning 5-11, afternoon 11-17, evening 17-21, night otherwise."""
+    return "morning" if 5 <= hour < 11 else "afternoon" if 11 <= hour < 17 else "evening" if 17 <= hour < 21 else "night"
+
+
+def pick_sky(src_dir, out, tz, now=None):
+    """Copy src_dir/hero-<phase>.svg to out for the current hour in tz (an IANA zone, e.g. Africa/Cairo)."""
+    import os, shutil
+    if now is None:
+        try:
+            from zoneinfo import ZoneInfo
+            now = dt.datetime.now(ZoneInfo(tz))
+        except Exception:   # no tz database (Windows without the tzdata package): fall back to the UTC clock + 2 h
+            say("no time-zone data for %s - using UTC+2" % tz)
+            now = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=2)
+    ph = sky_phase(now.hour)
+    shutil.copyfile(os.path.join(src_dir, "hero-%s.svg" % ph), out)
+    return ph
 
 
 def self_test():
@@ -153,10 +188,11 @@ def self_test():
     svg = city_svg(days, title="BUILD CITY", subtitle="2026")
     ok("a block per active day, a flat tile per empty day", svg.count('class="b"') == 3 and svg.count("<path d=") >= 10)
     ok("stats printed from the data, runner present, reduced motion honoured",
-       "1,217" in svg and "3 DAYS" in svg and 'class="run"' in svg and "prefers-reduced-motion" in svg)
+       "1,217" in svg and "3 DAYS" in svg and "THIS WEEK" in svg and 'class="run"' in svg and "prefers-reduced-motion" in svg)
     ok("one seamless snake: head and tail share a normalised path", svg.count('pathLength="1000"') == 2 and 'class="tail"' in svg)
     ok("identity fonts are embedded when given", "@font-face{x}" in city_svg(days, font_css="@font-face{x}"))
     ok("an empty calendar still renders", "<svg" in city_svg([], title="X"))
+    ok("sky phases cover the clock", [sky_phase(h) for h in (4, 5, 12, 18, 22)] == ["night", "morning", "afternoon", "evening", "night"])
     say("%d failure(s)" % fails)
     return 1 if fails else 0
 
@@ -172,6 +208,9 @@ def main():
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--html", help="read the calendar from a saved page instead of the network")
     ap.add_argument("--font-css", help="a CSS file with @font-face rules for the families Display and Body")
+    ap.add_argument("--sky-from", help="also copy DIR/hero-<phase>.svg for the local hour to --sky-to")
+    ap.add_argument("--sky-to", default="hero.svg")
+    ap.add_argument("--tz", default="Africa/Cairo")
     a = ap.parse_args()
     try:
         page = io.open(a.html, encoding="utf-8").read() if a.html else fetch(a.user)
@@ -183,9 +222,11 @@ def main():
         say("no days found on the calendar page - GitHub may have changed its markup")
         return 2
     tok = json.load(io.open(a.tokens, encoding="utf-8")) if a.tokens else None
-    sub = a.subtitle or "%s  /  %s" % (days[0][0], days[-1][0])
+    sub = a.subtitle or "LIVE  /  UPDATED %s" % days[-1][0]
     fc = io.open(a.font_css, encoding="utf-8").read() if a.font_css else ""
     io.open(a.out, "w", encoding="utf-8", newline="\n").write(city_svg(days, tok, a.title, sub, fc))
+    if a.sky_from:
+        say("sky: %s -> %s" % (pick_sky(a.sky_from, a.sky_to, a.tz), a.sky_to))
     st = stats(days)
     say("city: %d days, %d contributions, longest streak %d -> %s" % (len(days), st["total"], st["longest"], a.out))
     return 0
