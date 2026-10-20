@@ -1,9 +1,9 @@
-<a href="https://bnramadan.com"><img src="https://raw.githubusercontent.com/BnRamadan/BnRamadan/output/hero.svg" alt="BnRamadan, Creative Software Engineer, full-stack. I build high-performance, animated web experiences with real business impact. Now: working with two companies. 5+ years in production, 18+ live projects, 6 countries. Built with Next.js, TypeScript, Node.js, MongoDB, GSAP, Three.js and Tailwind CSS. Enter bnramadan.com." width="100%"></a>
+<a href="https://bnramadan.com"><img src="https://raw.githubusercontent.com/BnRamadan/BnRamadan/output/hero.svg" alt="BnRamadan, Creative Software Engineer and Full-Stack Developer, greeting you in 18 languages. I build high-performance, animated web experiences with real business impact. CTO and founder of 3 companies. 30+ live projects, 14+ countries, 20K+ production hours. Built with Next.js, TypeScript, Node.js, MongoDB, GSAP, Three.js and Tailwind CSS. Enter bnramadan.com." width="100%"></a>
 
-<a href="https://bnramadan.com"><img src="./assets/reel.svg" alt="Real work, live now: phone screens of Thermo Egypt, One Piece, Baly Leather, Wild Valley Honey, Hosavity and Tawazun, six of the 18+ live projects. Enter bnramadan.com." width="100%"></a>
+<a href="https://bnramadan.com"><img src="./assets/reel.svg" alt="Real work, live now: phone screens of Thermo Egypt, One Piece, Baly Leather, Wild Valley Honey, Hosavity and Tawazun, six of the 30+ live projects. Enter bnramadan.com." width="100%"></a>
 
 <p align="center">
-<a href="https://github.com/BnRamadan/BnRamadan/blob/main/worlds.geojson"><img src="./assets/portal-worlds.svg" alt="Global reach: 6 worlds. Click a country, open its projects. Open the live map" width="49%"></a>
+<a href="https://github.com/BnRamadan/BnRamadan/blob/main/worlds.geojson"><img src="./assets/portal-worlds.svg" alt="Global reach: world map. Click a pin, open the projects there. Open the live map" width="49%"></a>
 <a href="https://github.com/BnRamadan/BnRamadan/blob/main/game/README.md"><img src="./assets/portal-play.svg" alt="Mini game: Client Quest. You are the client. Two minutes. Press start" width="49%"></a>
 </p>
 

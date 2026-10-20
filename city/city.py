@@ -86,7 +86,25 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
         x, y = ox + week * wx + wd * dx, oy + week * wy + wd * dy
         h = 0 if c == 0 else 6 + 74 * math.sqrt(c / float(peak))
         placed.append((y + wy + dy, week, x, y, h, lv))
-    cells, runner = [], []
+    # the snake rides the skyline: one point per week on top of that week's tallest block (the ground
+    # in an empty week), joined by a smooth curve, so it climbs the towers and drops between them
+    T = 20.0
+    top_of = {}
+    for _, week, x, y, h, lv in placed:
+        if week not in top_of or h > top_of[week][2]:
+            top_of[week] = (x, y, h)
+    route = []
+    for week in sorted(top_of):
+        x, y, h = top_of[week]
+        if not h:   # an empty week: the middle of the street
+            x, y = ox + week * wx + 3 * dx, oy + week * wy + 3 * dy
+        route.append((x + (wx + dx) / 2, y + (wy + dy) / 2 - h - 4))
+    cum = [0.0]
+    for p, q in zip(route, route[1:]):
+        cum.append(cum[-1] + math.hypot(q[0] - p[0], q[1] - p[1]))
+    total = cum[-1] or 1.0
+    reach = {week: cum[i] / total for i, week in enumerate(sorted(top_of))}   # when the head passes each week
+    cells = []
     for _, week, x, y, h, lv in sorted(placed):            # back to front, so nearer blocks cover farther ones
         col = tok["levels"][min(lv, 4)]
         A, B, C, D = (x, y), (x + wx, y + wy), (x + wx + dx, y + wy + dy), (x + dx, y + dy)
@@ -94,21 +112,25 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
         if h:
             front = "M%.1f %.1fL%.1f %.1fL%.1f %.1fL%.1f %.1fz" % (D[0], D[1] - h, C[0], C[1] - h, C[0], C[1], D[0], D[1])
             side = "M%.1f %.1fL%.1f %.1fL%.1f %.1fL%.1f %.1fz" % (B[0], B[1] - h, C[0], C[1] - h, C[0], C[1], B[0], B[1])
+            # the tower the snake stands on lights up as the head passes it
+            fx = ('<path class="fx" d="%s" style="animation-delay:%.2fs"/><path class="fx fs" d="%s" style="animation-delay:%.2fs"/>'
+                  % (top, reach[week] * T, front, reach[week] * T)) if top_of.get(week) == (x, y, h) else ""
             cells.append('<g class="b" style="animation-delay:%.2fs"><path d="%s" fill="%s" opacity=".5"/>'
-                         '<path d="%s" fill="%s" opacity=".75"/><path d="%s" fill="%s"/></g>'
-                         % (.03 * week, front, col, side, col, top, col))
+                         '<path d="%s" fill="%s" opacity=".75"/><path d="%s" fill="%s"/>%s</g>'
+                         % (.03 * week, front, col, side, col, top, col, fx))
         else:
             cells.append('<path d="%s" fill="%s"/>' % (top, tok["levels"][0]))
-    for date, lv, c in days:                                 # the runner follows the calendar order, not the paint order
-        d = dt.date.fromisoformat(date)
-        week = ((d - first).days + (first.weekday() + 1) % 7) // 7
-        wd = (d.weekday() + 1) % 7
-        h = 0 if c == 0 else 6 + 74 * math.sqrt(c / float(peak))
-        runner.append((ox + week * wx + wd * dx + (wx + dx) / 2, oy + week * wy + wd * dy + (wy + dy) / 2 - h))
-    # the snake: a head and a fading tail that crawl the whole year along the tops of the blocks, then loop.
-    # pathLength=1000 makes the dash period exactly one path, so there is one snake and no seam, whatever
-    # the year's real length in pixels.
-    d_run = ("M" + "L".join("%.1f %.1f" % p for p in runner[::2])) if runner else "M0 0"
+    # a Catmull-Rom curve through the route, as cubic Beziers
+    if len(route) > 1:
+        pts = [route[0]] + route + [route[-1]]
+        segs = ["M%.1f %.1f" % route[0]]
+        for i in range(1, len(pts) - 2):
+            p0, p1, p2, p3 = pts[i - 1], pts[i], pts[i + 1], pts[i + 2]
+            segs.append("C%.1f %.1f %.1f %.1f %.1f %.1f" % (p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6,
+                                                            p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]))
+        d_run = "".join(segs)
+    else:
+        d_run = "M0 0"
     s_total, s_long, s_best = "{:,}".format(st["total"]), st["longest"], st["best"]
     css = (font_css +
            ".bg{fill:%(bg)s}.t{font:500 13px Body,Roboto,'Segoe UI',Arial,sans-serif;letter-spacing:.3em;fill:%(se)s}"
@@ -118,13 +140,21 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
            ".ld{fill:%(se)s}.lr{fill:none;stroke:%(se)s;stroke-width:1.5;transform-box:fill-box;transform-origin:center;"
            "animation:ping 1.8s ease-out infinite}@keyframes ping{from{transform:scale(1);opacity:.9}to{transform:scale(3.4);opacity:0}}"
            ".b{transform-box:fill-box;transform-origin:bottom;animation:rise .9s cubic-bezier(.2,.9,.3,1.2) backwards}"
-           ".run,.tail{fill:none;stroke:%(se)s;stroke-linecap:round;stroke-linejoin:round}"
-           ".run{stroke-width:4;stroke-dasharray:9 991;animation:run 16s linear infinite;filter:drop-shadow(0 0 6px %(se)s)}"
-           ".tail{stroke-width:2.5;stroke-opacity:.4;stroke-dasharray:34 966;animation:tail 16s linear infinite}"
-           "@keyframes rise{from{transform:scaleY(0)}}@keyframes run{from{stroke-dashoffset:1000}to{stroke-dashoffset:0}}"
-           "@keyframes tail{from{stroke-dashoffset:1025}to{stroke-dashoffset:25}}"
+           # four layers of one snake on one normalised path (pathLength 1000): a dash of length L whose front
+           # sits at p needs dashoffset L - p, so every layer runs from L to L - 1000 and their fronts stay together
+           ".sn{fill:none;stroke-linecap:round;stroke-linejoin:round;animation-duration:%(T)ds;animation-timing-function:linear;"
+           "animation-iteration-count:infinite}"
+           ".sg{stroke:%(se)s;stroke-width:16;stroke-opacity:.14;stroke-dasharray:110 890;animation-name:sg}"
+           ".st{stroke:%(se)s;stroke-width:2.5;stroke-opacity:.55;stroke-dasharray:130 870;animation-name:st}"
+           ".sb{stroke:%(se)s;stroke-width:5.5;stroke-dasharray:70 930;animation-name:sb;filter:drop-shadow(0 0 5px %(se)s)}"
+           ".sh{stroke:%(pr)s;stroke-width:10;stroke-dasharray:1.5 998.5;animation-name:sh;filter:drop-shadow(0 0 8px %(se)s)}"
+           "@keyframes sg{from{stroke-dashoffset:110}to{stroke-dashoffset:-890}}@keyframes st{from{stroke-dashoffset:130}to{stroke-dashoffset:-870}}"
+           "@keyframes sb{from{stroke-dashoffset:70}to{stroke-dashoffset:-930}}@keyframes sh{from{stroke-dashoffset:1.5}to{stroke-dashoffset:-998.5}}"
+           ".fx{fill:%(se)s;opacity:0;animation:fx %(T)ds ease-out infinite}.fs{animation-name:fs}"
+           "@keyframes fx{0%%{opacity:.95}10%%,100%%{opacity:0}}@keyframes fs{0%%{opacity:.45}10%%,100%%{opacity:0}}"
+           "@keyframes rise{from{transform:scaleY(0)}}"
            "@media (prefers-reduced-motion: reduce){*{animation:none!important}}"
-           ) % {"bg": tok["bg"], "se": tok["secondary"], "fg": tok["fg"], "pr": tok["primary"], "mu": tok["muted"]}
+           ) % {"bg": tok["bg"], "se": tok["secondary"], "fg": tok["fg"], "pr": tok["primary"], "mu": tok["muted"], "T": T}
     # live numbers, recomputed by every run: the year, the last seven days, the longest streak
     stat_el = "".join('<text x="%d" y="128" class="n" text-anchor="end">%s</text><text x="%d" y="150" class="l" text-anchor="end">%s</text>'
                       % (x, v, x, l) for x, v, l in ((1124, s_total, "THIS YEAR"), (1124 - 190, "{:,}".format(st["week"]), "THIS WEEK"),
@@ -144,9 +174,9 @@ def city_svg(days, tok=None, title="BUILD CITY", subtitle="", font_css=""):
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" role="img" aria-label="%s">'
             '<title>%s</title><style>%s</style><rect class="bg" width="%d" height="%d" rx="24"/>%s'
             '<text x="96" y="78" class="t">%s</text><text x="76" y="124" class="h">%s</text>%s'
-            '<g>%s<path class="tail" d="%s" pathLength="1000"/><path class="run" d="%s" pathLength="1000"/></g>%s</svg>'
+            '<g>%s%s</g>%s</svg>'
             % (W, H, W, H, html.escape(alt), html.escape(alt), css, W, H, glow, html.escape(subtitle.upper()), html.escape(title),
-               stat_el, "".join(cells), d_run, d_run, edge))
+               stat_el, "".join(cells), "".join('<path class="sn %s" d="%s" pathLength="1000"/>' % (k, d_run) for k in ("sg", "st", "sb", "sh")), edge))
 
 
 def sky_phase(hour):
@@ -169,6 +199,13 @@ def pick_sky(src_dir, out, tz, now=None):
     return ph
 
 
+def _three_weeks_ok():
+    days = [((dt.date(2026, 1, 4) + dt.timedelta(days=i)).isoformat(), 1 + i % 4, (i * 7) % 11) for i in range(21)]
+    svg = city_svg(days)
+    d = re.search(r'class="sn sh" d="([^"]+)"', svg).group(1)
+    return d.count("C") == 2 and svg.count('class="fx"') == 3 and "@keyframes fx" in svg
+
+
 def self_test():
     fails = 0
 
@@ -188,8 +225,10 @@ def self_test():
     svg = city_svg(days, title="BUILD CITY", subtitle="2026")
     ok("a block per active day, a flat tile per empty day", svg.count('class="b"') == 3 and svg.count("<path d=") >= 10)
     ok("stats printed from the data, runner present, reduced motion honoured",
-       "1,217" in svg and "3 DAYS" in svg and "THIS WEEK" in svg and 'class="run"' in svg and "prefers-reduced-motion" in svg)
-    ok("one seamless snake: head and tail share a normalised path", svg.count('pathLength="1000"') == 2 and 'class="tail"' in svg)
+       "1,217" in svg and "3 DAYS" in svg and "THIS WEEK" in svg and 'class="sn sb"' in svg and "prefers-reduced-motion" in svg)
+    ok("one seamless snake: glow, tail, body and head share one normalised path", svg.count('pathLength="1000"') == 4 and 'class="sn sh"' in svg)
+    ok("the snake rides the skyline: a curve through the weekly peaks, the tower it passes lights up",
+       _three_weeks_ok())
     ok("identity fonts are embedded when given", "@font-face{x}" in city_svg(days, font_css="@font-face{x}"))
     ok("an empty calendar still renders", "<svg" in city_svg([], title="X"))
     ok("sky phases cover the clock", [sky_phase(h) for h in (4, 5, 12, 18, 22)] == ["night", "morning", "afternoon", "evening", "night"])
