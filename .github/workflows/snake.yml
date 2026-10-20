@@ -1,0 +1,43 @@
+# Draws the daily pictures in the BnRamadan palette into the `output` branch: the contribution
+# snake and the 3D contribution city. One workflow, one push, so neither overwrites the other.
+# Actions are pinned to the commit their tag pointed to on 2026-10-20 (actions/checkout v4,
+# Platane/snk v3, yoshi389111/github-profile-3d-contrib v0.9.3, crazy-max/ghaction-github-pages v4),
+# so a moved tag cannot change what runs here.
+name: daily pictures
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: Platane/snk/svg-only@d8f6715049803e982ee5ff501b6b9b7d5deeb09b # v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            dist/snake-dark.svg?palette=github-dark&color_snake=#00B4EF&color_dots=#0A111F,#1B3555,#3B6491,#7FA6D2,#AECAEA
+
+      - uses: yoshi389111/github-profile-3d-contrib@7d95e7d4cdc028dd1e1cbd957d65f35efb12ae39 # v0.9.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: ${{ github.repository_owner }}
+          SETTING_JSON: .github/3d-city.json
+
+      - name: Collect the city next to the snake
+        run: cp profile-3d-contrib/profile-3d.svg dist/profile-3d.svg
+
+      - uses: crazy-max/ghaction-github-pages@df5cc2bfa78282ded844b354faee141f06b41865 # v4
+        with:
+          target_branch: output
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
