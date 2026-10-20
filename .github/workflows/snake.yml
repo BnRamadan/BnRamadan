@@ -1,12 +1,13 @@
-# Draws the daily contribution city in the BnRamadan identity into the `output` branch.
-# The city and its snake come from city/city.py (Python standard library, no token: it reads the
-# public contributions calendar). Actions are pinned to the commit their tag pointed to on
-# 2026-10-20 (actions/checkout v4, crazy-max/ghaction-github-pages v4).
+# Every hour: redraws the contribution city (city/city.py, Python standard library, no token: it reads
+# the public contributions calendar) and picks the hero for the time of day in Cairo
+# (assets/hero-<morning|afternoon|evening|night>.svg), then pushes both to the `output` branch in one push.
+# Actions are pinned to the commit their tag pointed to on 2026-10-20 (actions/checkout v4,
+# crazy-max/ghaction-github-pages v4).
 name: daily pictures
 
 on:
   schedule:
-    - cron: "17 3 * * *"
+    - cron: "7 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -19,10 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Draw the city
+      - name: Draw the city and pick the sky
         run: |
           mkdir -p dist
-          python3 city/city.py "${{ github.repository_owner }}" --out dist/city.svg --font-css city/fonts.css
+          python3 city/city.py "${{ github.repository_owner }}" --out dist/city.svg --font-css city/fonts.css --sky-from assets --sky-to dist/hero.svg --tz Africa/Cairo
 
       - uses: crazy-max/ghaction-github-pages@df5cc2bfa78282ded844b354faee141f06b41865 # v4
         with:
